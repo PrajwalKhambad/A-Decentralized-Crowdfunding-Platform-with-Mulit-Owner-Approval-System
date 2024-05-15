@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crowdfunding Platform</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+</head>
+<body>
+    {% include 'header.html' %}
+
+    <div class="sidebar">
+        <ul>
+            <li><a href="#"><i class="fas fa-user"></i></a></li>
+            <li><a href="#"><i class="fas fa-cog"></i></a></li>
+            <li><a href="#"><i class="fas fa-tachometer-alt"></i></a></li>
+            <!-- Add more dynamic sidebar links -->
+        </ul>
+    </div>
+
+    <div class="content">
+             <!-- Campaigns -->
+             {% for campaign in campaigns %}
+        <div class="campaign-card">
+            <img src="{{ campaign.image }}" alt="Campaign Image">
+            <h3>{{ campaign.name }}</h3>
+            <p>{{ campaign.description }}</p>
+            <div class="progress-bar">
+                <div class="progress" style="width: {{ campaign.progress }}%;"></div>
+            </div>
+            <p>Target Amount: ${{ campaign.raised }} / ${{ campaign.target }}</p>
+            <a href="#" class="btn">Contribute</a>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>
