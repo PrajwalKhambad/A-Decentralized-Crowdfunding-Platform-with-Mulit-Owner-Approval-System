@@ -20,18 +20,18 @@
     </div>
 
     <div class="content">
-             <!-- Campaigns -->
-             {% for campaign in campaigns %}
-        <div class="campaign-card">
+        <!-- Campaigns -->
+        {% for campaign in campaigns %}
+        <a href="/campaign/{{ campaign.name }}" class="campaign-card">
             <img src="{{ campaign.image }}" alt="Campaign Image">
             <h3>{{ campaign.name }}</h3>
-            <p>{{ campaign.description }}</p>
+            <!-- <p>{{ campaign.description }}</p> -->
             <div class="progress-bar">
                 <div class="progress" style="width: {{ campaign.progress }}%;"></div>
             </div>
-            <p>Target Amount: ${{ campaign.raised }} / ${{ campaign.target }}</p>
-            <a href="#" class="btn">Contribute</a>
-        </div>
+            <p>Target Amount: ${{ campaign.target_amount }}</p>
+            <p>Minimum Contribution: ${{ campaign.min_contribution }}</p>
+        </a>
         {% endfor %}
     </div>
 </body>

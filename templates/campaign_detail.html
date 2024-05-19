@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crowdfunding Campaign</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='campaign_detail.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="campaign-header">
+                <img src="{{ campaign.image }}" alt="{{ campaign_name }}">
+                <h1>{{ campaign.name }}</h1>
+            </div>
+            <div>
+                <p>{{ campaign.description }}</p>
+            </div>
+        </div>
+        <div class="campaign-details">
+            <div class="card">
+                <h2>Campaign Details</h2>
+                <p><strong>Target Amount:</strong> ${{ campaign.target_amount }}</p>
+                <p><strong>Minimum Contribution:</strong> ${{ campaign.min_contribution }}</p>
+                <p><strong>Second Owner Address:</strong> {{ campaign.second_owner_address }}</p>
+            </div>
+            <div class="card contribute-section">
+                <h2>Contribute to this Campaign</h2>
+                <form action="/contribute" method="POST">
+                    <input type="number" name="contribution_amount" min="{{ min_contribution }}" placeholder="Enter amount">
+                    <button type="submit">Contribute</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

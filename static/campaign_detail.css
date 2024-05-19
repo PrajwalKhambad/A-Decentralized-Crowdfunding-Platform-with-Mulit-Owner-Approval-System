@@ -1,0 +1,74 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0px;
+    padding: 0;
+    background-color: #f8f8f8;
+}
+
+.container {
+    width: 80%;
+    margin: 25px auto;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+}
+
+.campaign-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.campaign-header img {
+    max-width: 300px;
+    margin-right: 20px;
+    border-radius: 10px;
+}
+
+.campaign-header h1 {
+    font-size: 2em;
+    margin: 0;
+}
+
+.card {
+    background-color: #f9f9f9;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.card p {
+    margin: 10px 0;
+    font-size: 1.2em;
+    line-height: 1.6;
+}
+
+.campaign-details {
+    flex: 1;
+    margin-left: 20px;
+}
+
+.contribute-section input[type="number"] {
+    padding: 10px;
+    font-size: 1em;
+    width: 200px;
+    margin-right: 10px;
+}
+
+.contribute-section button {
+    padding: 10px 20px;
+    font-size: 1em;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.contribute-section button:hover {
+    background-color: #218838;
+}

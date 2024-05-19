@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for
 import firebase_admin
 from firebase_admin import credentials, auth, firestore, storage
+import connect_contract
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key"
@@ -13,7 +14,8 @@ cl = firestore.client()
 
 @app.route('/')
 def hello():
-    return render_template('index.html')
+    campaigns = fetch_campaigns_from_firestore()
+    return render_template('home.html', campaigns=campaigns)
 
 # Route for rendering sign up form
 @app.route('/signup', methods=['GET', 'POST'])
@@ -111,6 +113,35 @@ def home():
     campaigns = fetch_campaigns_from_firestore()
     return render_template('home.html', campaigns=campaigns)
 
+def fetch_individual_campaign_from_firestore(campaign_name):
+    campaign_ref = cl.collection('campaigns')
+    query = campaign_ref.where('campaign_name', '==', campaign_name).limit(1)
+    docs = query.stream()
+
+    for doc in docs:
+        campaign_data = doc.to_dict()
+
+        individual_campaign = {
+            'name': campaign_data['campaign_name'],
+            'description': campaign_data['campaign_description'],
+            'image': campaign_data['image_input'],
+            'progress': calculate_progress(campaign_data['min_contribution'], campaign_data['target_amount']),
+            'min_contribution': campaign_data['min_contribution'],
+            'target_amount': campaign_data['target_amount'],
+            # 'second_owner_address':campaign_data['second_owner_address']
+        }
+
+        return individual_campaign
+
+    return None  # Return None if no campaign with the given name is found
+
+
+@app.route('/campaign/<campaign_name>')
+def campaign_details(campaign_name):
+    campaign = fetch_individual_campaign_from_firestore(campaign_name=campaign_name)
+    print(campaign)
+    return render_template('campaign_detail.html', campaign=campaign)
+
 @app.route('/create_campaign')
 def create_campaign():
     return render_template('create_campaign.html')
@@ -123,12 +154,14 @@ def add_campaign():
         campaign_description = request.form['campaign_description']
         image = request.files['image_input']
         target_amount = request.form['target_amount']
+        second_owner_address = request.form['sowner_address']
 
         # Upload image to Storage
         if image:
             bucket = storage.bucket()
             blob = bucket.blob(campaign_name)
             blob.upload_from_string(image.read(), content_type=image.content_type)
+            blob.make_public()
             img_url = blob.public_url
         else:
             img_url = None
@@ -141,10 +174,12 @@ def add_campaign():
             'campaign_name': campaign_name,
             'campaign_description': campaign_description,
             'image_input': img_url,
-            'target_amount': target_amount
+            'target_amount': target_amount,
+            'second_owner_address': second_owner_address
         })
         
-        return 'Campaign added to Firestore successfully.'
+        # return 'Campaign added to Firestore successfully.'
+        return redirect(url_for('home'))
     
 if __name__ == '__main__':
     app.run(debug=True)

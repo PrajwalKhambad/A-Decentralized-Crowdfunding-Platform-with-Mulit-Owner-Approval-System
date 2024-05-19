@@ -86,8 +86,8 @@ nav ul li a:hover {
 }
 
 .content {
-    background-color: #fff;
-    padding: 20px;
+    background-color: #444;
+    padding: 35px;
     border-radius: 10px;
     box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.1);
     display: flex;
@@ -100,7 +100,7 @@ nav ul li a i {
 }
 
 .campaign-card {
-    background-color: #fff;
+    background-color: #dad7d7;
     border-radius: 8px;
     box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.1);
     width: calc(33.33% - 20px);
@@ -133,7 +133,7 @@ nav ul li a i {
 }
 
 .progress {
-    background-color: #4caf50;
+    background-color: #42c247;
     height: 100%;
     width: 50%; /* Example progress */
 }
@@ -150,4 +150,53 @@ nav ul li a i {
 
 .btn:hover {
     background-color: #555;
+}
+
+
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+/* Modal Content/Box */
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto; /* 15% from the top and centered */
+    padding: 20px;
+    border: 1px solid #888;
+    width: 50%; /* Could be more or less, depending on screen size */
+}
+
+/* Close Button */
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+
+.campaign-card {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+}
+.campaign-card:hover {
+    cursor: pointer;
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
