@@ -1,61 +1,11 @@
-<!-- header.html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    
+
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-</head>
-<body>
-    <header>
-        <div class="container">
-            <h1>CrowdFunding</h1>
-            <nav>
-                <ul>
-                    <li><a href="/create_campaign"><i class="fas fa-plus"></i>Create Campaign</a></li>
-                    <li><a href="#"><i class="fas fa-list"></i>View Transactions</a></li>
-                    <li><a href="#" id="connectWalletBtn"><i class="fas fa-wallet"></i>Connect Wallet</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
-
-    <div id="walletModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <iframe src="templates\index.html" width="100%" height="100%"></iframe>
-        </div>
-    </div>
-
-    <script>
-        document.getElementById('connectWalletBtn').addEventListener('click', function() {
-            document.getElementById('walletModal').style.display = 'block';
-        });
-
-        // Close the modal when clicking outside of it
-        window.onclick = function(event) {
-            var modal = document.getElementById('walletModal');
-            if (event.target == modal) {
-                modal.style.display = "none";
-            }
-        }
-    </script>
-
-</body>
-</html> -->
-
-<!-- header.html -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    
-    <link rel="stylesheet" href="static\styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
 </head>
 <body>
@@ -76,23 +26,49 @@
         <div class="modal-content">
             <span class="close">&times;</span>
             <center>
-                <h1>Connect Your MetaMask Wallet Here!</h1>
+                <h2>Connect Your MetaMask Wallet Here!</h2>
                 <p id="walletAddress"></p>
                 <p id="walletBalance"></p>
-                <button id='getBalance' onclick="checkBalance()">Get Balance of Wallet</button>
+                <button id="connectMetaMaskBtn">Connect MetaMask Wallet</button>
+                <button id="getBalance" style="display:none;">Get Balance</button>
+                <br>
+                <button id="disconnectWallet" style="display:none;">Disconnect Wallet</button>
             </center>
         </div>
     </div>
 
     <script>
-        document.getElementById('connectWalletBtn').addEventListener('click', function() {
+        document.getElementById('connectWalletBtn').addEventListener('click', async function () {
+            const loggedIn = await isUserLoggedIn();
+            if (!loggedIn) {
+                alert('Please log in or sign up first.');
+                window.location.href = '/login';
+                return;
+            }
             document.getElementById('walletModal').style.display = 'block';
+        });
+
+        document.getElementsByClassName('close')[0].addEventListener('click', function () {
+            document.getElementById('walletModal').style.display = 'none';
+        });
+
+        document.getElementById('connectMetaMaskBtn').addEventListener('click', function () {
             checkInstalled();
         });
 
-        document.getElementsByClassName('close')[0].addEventListener('click', function() {
-            document.getElementById('walletModal').style.display = 'none';
+        document.getElementById('getBalance').addEventListener('click', function () {
+            checkBalance();
         });
+
+        document.getElementById('disconnectWallet').addEventListener('click', function () {
+            signOutOfMetaMask();
+        });
+
+        async function isUserLoggedIn() {
+            const response = await fetch('/is_logged_in');
+            const data = await response.json();
+            return data.logged_in;
+        }
 
         async function checkInstalled() {
             if (typeof window.ethereum == 'undefined') {
@@ -105,34 +81,34 @@
         async function connectWalletwithMetaMask() {
             const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
                 .catch((e) => {
-                    console.error(e.message)
-                    return
-                })
+                    console.error(e.message);
+                    return;
+                });
 
-            if (!accounts) { return }
+            if (!accounts) { return; }
 
-            window.userWalletAddress = accounts[0]
-            document.getElementById('walletAddress').innerText = "Connected Wallet Address: " + window.userWalletAddress
-
-            setTimeout(() => {
-                checkBalance();
-            }, 2000);
-
-            setTimeout(() => {
-                signOutOfMetaMask();
-            }, 10000);
+            window.userWalletAddress = accounts[0];
+            document.getElementById('walletAddress').innerText = "Connected Wallet Address: " + window.userWalletAddress;
+            document.getElementById('connectMetaMaskBtn').style.display = 'none';
+            document.getElementById('getBalance').style.display = 'block';
+            document.getElementById('disconnectWallet').style.display = 'block';
         }
 
         async function signOutOfMetaMask() {
-            window.userWalletAddress = null
-            document.getElementById('walletAddress').innerText = 'Wallet Disconnected'
-
-            setTimeout(() => {
-                connectWalletwithMetaMask();
-            }, 3000);
+            window.userWalletAddress = null;
+            document.getElementById('walletAddress').innerText = 'Wallet Disconnected';
+            document.getElementById('walletBalance').innerText = '';
+            document.getElementById('connectMetaMaskBtn').style.display = 'block';
+            document.getElementById('getBalance').style.display = 'none';
+            document.getElementById('disconnectWallet').style.display = 'none';
         }
 
         async function checkBalance() {
+            if (!window.userWalletAddress) {
+                alert('Please connect to MetaMask first.');
+                return;
+            }
+
             let balance = await window.ethereum.request({
                 method: "eth_getBalance",
                 params: [
@@ -140,11 +116,12 @@
                     'latest'
                 ]
             }).catch((err) => {
-                console.log(err)
-            })
+                console.log(err);
+            });
 
             document.getElementById('walletBalance').innerText = "Wallet Balance: " + parseFloat((balance) / Math.pow(10, 18)) + " ETH";
         }
     </script>
 </body>
+
 </html>

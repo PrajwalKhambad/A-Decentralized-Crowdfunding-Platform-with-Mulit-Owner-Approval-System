@@ -6,7 +6,7 @@ body {
 }
 
 .container {
-    width: 80%;
+    width: 90%;
     margin: 25px auto;
     padding: 20px;
     background-color: #fff;
@@ -34,11 +34,19 @@ body {
 }
 
 .card {
-    background-color: #f9f9f9;
+    background-color: #e7e5e5;
     border-radius: 10px;
     padding: 20px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     margin-bottom: 20px;
+}
+
+.internalcard{
+    background-color: #3e5165;
+    border-radius: 6px;
+    padding: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 10px;
 }
 
 .card p {
@@ -55,20 +63,37 @@ body {
 .contribute-section input[type="number"] {
     padding: 10px;
     font-size: 1em;
-    width: 200px;
-    margin-right: 10px;
+    width: 150px;
+    margin-right: 30px;
 }
 
 .contribute-section button {
-    padding: 10px 20px;
+    padding: 12px 24px;
     font-size: 1em;
-    background-color: #28a745;
+    background-color: #ff6f61;
     color: white;
     border: none;
-    border-radius: 5px;
+    border-radius: 6px;
     cursor: pointer;
+    transition: background-color 0.3s ease;
 }
 
 .contribute-section button:hover {
-    background-color: #218838;
+    background-color: #e05246;
+}
+
+.button-container {
+    display: flex;
+    gap: 30px; /* Adds some space between the buttons */
+}
+
+.button-container form {
+    margin: 0; /* Removes default margin from forms */
+}
+
+.internalcard p{
+    color: #fff;
+    margin: 10px 0;
+    /* font-size:em; */
+    line-height: 1.5;
 }

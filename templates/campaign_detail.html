@@ -19,23 +19,45 @@
                 <img src="{{ campaign.image }}" alt="{{ campaign_name }}">
                 <h1>{{ campaign.name }}</h1>
             </div>
+            <br>
             <div>
                 <p>{{ campaign.description }}</p>
+            </div>
+            <br>
+            <div>
+                <div class="internalcard">
+                    <p><strong>Contract Address:</strong> {{ campaign.second_owner_address }}</p>
+                </div>
             </div>
         </div>
         <div class="campaign-details">
             <div class="card">
-                <h2>Campaign Details</h2>
+                <!-- <h2>Campaign Details</h2> -->
                 <p><strong>Target Amount:</strong> ${{ campaign.target_amount }}</p>
                 <p><strong>Minimum Contribution:</strong> ${{ campaign.min_contribution }}</p>
-                <p><strong>Second Owner Address:</strong> {{ campaign.second_owner_address }}</p>
+                <br>
+                <div class="internalcard">
+                    <p><strong>Owner Address:</strong> {{ campaign.owner_address }}</p>
+                </div>
+                <div class="internalcard">
+                    <p><strong>Second Owner Address:</strong> {{ campaign.second_owner_address }}</p>
+                </div>                
             </div>
             <div class="card contribute-section">
-                <h2>Contribute to this Campaign</h2>
+                <!-- <h2>Contribute to this Campaign</h2> -->
                 <form action="/contribute" method="POST">
                     <input type="number" name="contribution_amount" min="{{ min_contribution }}" placeholder="Enter amount">
                     <button type="submit">Contribute</button>
                 </form>
+                <br>
+                <div class="button-container">
+                    <form action="/withdraw_donation" method="POST">
+                        <button type="submit">Withdraw Donation</button>
+                    </form>
+                    <form action="/view_details" method="POST">
+                        <button type="submit">Owner Details</button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

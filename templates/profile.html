@@ -3,9 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>User Profile</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='profile.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
 </head>
 <body>
-    <h2>HELLO USER</h2>
+    {% include 'header.html' %}
+
+    <div class="profile-container">
+        <div class="card profile-card">
+            <div class="profile-info">
+                <h2>User Profile</h2>
+                <p><strong>Username:</strong> {{ user.user_name }}</p>
+                <p><strong>Email:</strong> {{ user.email }}</p>
+                <p><strong>Institution:</strong> {{ user.institution }}</p>
+                <p><strong>Mobile Number:</strong> {{ user.mobile }}</p>
+                <div class="internalcard">
+                    <p><strong id="internalcardstrong">Current Wallet Address:</strong> {{ user.wallet_address }}</p>
+                </div> 
+            </div>
+            <form action="/logout">
+                <button id="logout" type="submit">Logout</button>
+            </form>
+        </div>
+    </div>
 </body>
 </html>

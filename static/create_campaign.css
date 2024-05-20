@@ -42,17 +42,23 @@ textarea {
     resize: vertical;
 }
 
-button[type="submit"] {
-    background-color: #333;
+button {
+    background-color: #ff6f61;
     color: #fff;
-    padding: 10px 20px;
-    font-size: 16px;
+    padding: 12px 24px;
     border: none;
-    border-radius: 5px;
+    border-radius: 6px;
+    font-size: 16px;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: background-color 0.3s ease;
 }
 
-button[type="submit"]:hover {
-    background-color: #555;
+button:hover{
+    background-color: #e05246;
+}
+
+.warning-message {
+    color: red;
+    font-weight: bold;
+    margin-top: 10px;
 }
