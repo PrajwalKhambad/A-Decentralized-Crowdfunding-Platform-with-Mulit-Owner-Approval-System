@@ -1,10 +1,11 @@
 from flask import Flask, render_template, request, redirect, session, url_for
 import firebase_admin
 from firebase_admin import credentials, auth, firestore, storage
-import connect_contract
+from connect_contract import w3, contract, abi, contract_bytecode
 
 app = Flask(__name__)
 app.secret_key = "cf_edi_s6_g3_5_ai_b"
+wallet_private_key = ''
 
 # Initialize Firebase Admin SDK
 cred = credentials.Certificate("crowdfunding-platform-ceab9-firebase-adminsdk-klmj2-fae3aaaa91.json")
@@ -107,7 +108,6 @@ def update_wallet():
 
 def fetch_campaigns_from_firestore():
     campaigns = []
-    # Assuming you have a collection named 'campaigns' in Firestore
     campaign_ref = cl.collection('campaigns')
     docs = campaign_ref.stream()
 
@@ -117,7 +117,7 @@ def fetch_campaigns_from_firestore():
             'name': campaign_data['campaign_name'],
             # 'description': campaign_data['campaign_description'],
             'image': campaign_data['image_input'],
-            'progress': calculate_progress(campaign_data['min_contribution'], campaign_data['target_amount']),
+            'progress': calculate_progress(campaign_data['collectedAmount'], campaign_data['target_amount']),
             'min_contribution': campaign_data['min_contribution'],
             'target_amount': campaign_data['target_amount'],
             # 'owner_address': campaign_data['owner_address'],
@@ -147,12 +147,13 @@ def fetch_individual_campaign_from_firestore(campaign_name):
             'name': campaign_data['campaign_name'],
             'description': campaign_data['campaign_description'],
             'image': campaign_data['image_input'],
-            'progress': calculate_progress(campaign_data['min_contribution'], campaign_data['target_amount']),
+            'progress': calculate_progress(campaign_data['collectedAmount'], campaign_data['target_amount']),
             'min_contribution': campaign_data['min_contribution'],
             'target_amount': campaign_data['target_amount'],
             'owner_address': campaign_data['owner_address'],
             'second_owner_address': campaign_data['second_owner_address'],
-            # 'contract_address': campaign_data['contract_address']
+            'contract_address': campaign_data['contract_address'],
+            'collectedAmount': campaign_data['collectedAmount']
         }
         return individual_campaign
     return None  # Return None if no campaign with the given name is found
@@ -179,9 +180,8 @@ def add_campaign():
         second_owner_address = request.form['sowner_address']
         owner_address = request.form['fowner_address']
 
-
-        owner_address = connect_contract.w3.to_checksum_address(owner_address)
-        second_owner_address = connect_contract.w3.to_checksum_address(second_owner_address)
+        owner_address = w3.to_checksum_address(owner_address)
+        second_owner_address = w3.to_checksum_address(second_owner_address)
         # Upload image to Storage
         if image:
             bucket = storage.bucket()
@@ -193,22 +193,22 @@ def add_campaign():
             img_url = None
 
         
-        private_key = '0e1a1681d9c26480cca0f34787cb3462aed1cc89176f7970cf792c1a6fb2d1e4'
-        gas_price = connect_contract.w3.eth.gas_price
-        transaction = connect_contract.contract.constructor(second_owner_address, connect_contract.w3.to_wei(target_amount, 'ether'), connect_contract.w3.to_wei(min_amt, 'ether')).build_transaction({
+        gas_price = w3.eth.gas_price
+        transaction = contract.constructor(second_owner_address, w3.to_wei(target_amount, 'ether'), w3.to_wei(min_amt, 'ether')).build_transaction({
             'from': owner_address,
-            'nonce': connect_contract.w3.eth.get_transaction_count(owner_address),
+            'nonce': w3.eth.get_transaction_count(owner_address),
             'gas': 6721975,
             'gasPrice': gas_price
         })
 
-        signed_txn = connect_contract.w3.eth.account.sign_transaction(transaction, private_key)
-        tx_hash = connect_contract.w3.eth.send_raw_transaction(signed_txn.rawTransaction)
-        tx_receipt = connect_contract.w3.eth.wait_for_transaction_receipt(tx_hash)
+        signed_txn = w3.eth.account.sign_transaction(transaction, wallet_private_key)
+        tx_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction)
+        tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
         print(tx_receipt)
+        # TODO: along with printing receipt, make provision such that user can download a pdf of that receipt.
 
         # Store data into Firestore
-        doc_ref = cl.collection('campaigns').document()
+        doc_ref = cl.collection('campaigns').document(tx_receipt.contractAddress)
         doc_ref.set({
             'min_contribution': min_amt,
             'campaign_name': campaign_name,
@@ -217,11 +217,81 @@ def add_campaign():
             'target_amount': target_amount,
             'second_owner_address': second_owner_address,
             'owner_address': owner_address,
-            'contract_address': tx_receipt.contractAddress
+            'contract_address': tx_receipt.contractAddress,
+            'collectedAmount': 0
         })
         
-        # return 'Campaign added to Firestore successfully.'
-        return redirect(url_for('campaign_details'))
+        return redirect(url_for('home'))
+    
+@app.route('/donate/<campaign_name>', methods=['POST'])
+def donate(campaign_name):
+    email = session.get('user_email')
+    user_details = fetch_user_details_from_firestore(email=email)
+    campaign_details_ = fetch_individual_campaign_from_firestore(campaign_name=campaign_name)
+
+    donor_address = user_details['wallet_address']
+    donor_address = w3.to_checksum_address(donor_address)
+    donation_amount = request.form['donation_amount']
+
+    contract_ = w3.eth.contract(address=campaign_details_['contract_address'], abi=abi, bytecode=contract_bytecode)
+
+    transaction = contract_.functions.donate().build_transaction({
+        'from': donor_address,
+        'value': w3.to_wei(donation_amount, 'ether'),
+        'gas': 6721975,
+        'gasPrice': w3.eth.gas_price,
+        'nonce': w3.eth.get_transaction_count(donor_address)
+    })
+
+    signed_txn = w3.eth.account.sign_transaction(transaction, wallet_private_key)
+    tx_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash,timeout=600)
+    print(tx_receipt)
+    # TODO: along with printing receipt, make provision such that user can download a pdf of that receipt.
+    
+    amount_collected = contract_.functions.amountCollected().call()    
+    print("Amt Coll: ", amount_collected)
+    doc_ref = cl.collection('campaigns').document(campaign_details_['contract_address'])
+    doc_ref.update({
+        'collectedAmount': str(w3.from_wei(amount_collected, 'ether'))
+    })
+
+    return redirect(url_for('home'))
+
+@app.route('/withdraw_donation/<campaign_name>', methods=['POST'])
+def withdraw_donation(campaign_name):
+    email = session.get('user_email')
+    user_details = fetch_user_details_from_firestore(email=email)
+    campaign_details_ = fetch_individual_campaign_from_firestore(campaign_name=campaign_name)
+
+    donor_address = user_details['wallet_address']
+    contract_address = campaign_details_['contract_address']
+
+    donor_address = w3.to_checksum_address(donor_address)
+    contract_instance = w3.eth.contract(address=contract_address, abi=abi)
+
+    transaction = contract_instance.functions.withdrawDonation().build_transaction({
+        'from': donor_address,
+        'gas': 6721975,
+        'gasPrice': w3.eth.gas_price,
+        'nonce': w3.eth.get_transaction_count(donor_address)
+    })
+
+    signed_txn = w3.eth.account.sign_transaction(transaction, wallet_private_key)
+    tx_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+    print(tx_receipt)
+    # TODO: along with printing receipt, make provision such that user can download a pdf of that receipt.
+
+    amount_collected = contract_instance.functions.amountCollected().call()    
+    print("Amt Coll: ", amount_collected)
+    doc_ref = cl.collection('campaigns').document(campaign_details_['contract_address'])
+    doc_ref.update({
+        'collectedAmount': str(w3.from_wei(amount_collected, 'ether'))
+    })
+
+    return redirect(url_for('home'))
+
     
 if __name__ == '__main__':
     app.run(debug=True)

@@ -10,17 +10,18 @@
 <body>
     {% include 'header.html' %}
 
-    <div class="sidebar">
-        <ul>
-            <li><a href="/user_profile"><i class="fas fa-user"></i></a></li>
-            <li><a href="#"><i class="fas fa-cog"></i></a></li>
-            <li><a href="#"><i class="fas fa-tachometer-alt"></i></a></li>
-            <!-- Add more dynamic sidebar links -->
-        </ul>
+    <div class="opener">
+        <p>Crowdfunding Platform showcasing student campaigns and donation drives, <br>using the pwoer of Blockchain and MetaMask</p>
+        <!-- <a href="/create_campaign">Create Campaign</a> -->
+        <form action="/create_campaign">
+            <button id="create" type="submit">Create Campaign</button>
+        </form>
+        <br><br><br>
+        <li>Ongoing Campaigns</li>
+        <hr>
     </div>
 
     <div class="content">
-        <!-- Campaigns -->
         {% for campaign in campaigns %}
         <a href="/campaign/{{ campaign.name }}" class="campaign-card">
             <img src="{{ campaign.image }}" alt="Campaign Image">
