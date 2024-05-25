@@ -24,27 +24,52 @@
             <br>
             <div>
                 <div class="internalcard">
-                    <p><strong>Contract Address:</strong> {{ campaign.second_owner_address }}</p>
+                    <p><strong>Contract Address:</strong> {{ campaign.contract_address }}</p>
+                </div>
+                <br>
+                <a href="https://sepolia.etherscan.io/address/{{campaign.contract_address}}" class="styled-link"
+                    target="_blank">
+                    View Previous Transactions of this Campaign on Sepolia Etherscan <i
+                        class="fas fa-external-link-alt"></i>
+                </a>
+                <br><br>
+                <div class="button-container">
+                    {% if user.wallet_address == campaign.second_owner_address %}
+                    <form action="/approve_withdrawal/{{ campaign.name }}" method="POST">
+                        <button type="submit">Approve Withdrawal</button>
+                    </form>
+                    {% endif %}
+                    {% if user.wallet_address == campaign.owner_address %}
+                    <form action="/withdraw_funds/{{ campaign.name }}" method="POST">
+                        <button type="submit">Withdraw Funds</button>
+                    </form>
+                    {% endif %}
                 </div>
             </div>
         </div>
         <div class="campaign-details">
             <div class="card">
                 <!-- <h2>Campaign Details</h2> -->
-                <p><strong>Target Amount:</strong> ${{ campaign.target_amount }}</p>
-                <p><strong>Minimum Contribution:</strong> ${{ campaign.min_contribution }}</p>
-                <p><strong>Amount Collected:</strong>${{ campaign.collectedAmount }}</p>
+                <p>Target Amount:<strong> {{ campaign.target_amount }} ETH</strong></p>
+                <p>Minimum Contribution:<strong> {{ campaign.min_contribution }} ETH</strong></p>
+                <p>Campaign Balance:<strong> {{ campaign.collectedAmount }} ETH</strong></p>
+                {% if status %}
+                <p>Second Owner Approval Status: <strong style="color: green;">Approved</strong></p>
+                {% else %}
+                <p>Second Owner Approval Status: <strong style="color: red;">Not Approved</strong></p>
+                {% endif %}
                 <br>
                 <div class="internalcard">
                     <p><strong>Owner Address:</strong> {{ campaign.owner_address }}</p>
                 </div>
                 <div class="internalcard">
                     <p><strong>Second Owner Address:</strong> {{ campaign.second_owner_address }}</p>
-                </div>                
+                </div>
             </div>
             <div class="card contribute-section">
                 <form action="/donate/{{ campaign.name }}" method="POST">
-                    <input type="number" name="donation_amount" min="{{ campaign.min_contribution }}" placeholder="Enter amount">
+                    <input type="number" name="donation_amount" min="{{ campaign.min_contribution }}"
+                        placeholder="Enter amount">
                     <button type="submit">Contribute</button>
                 </form>
                 <br>
@@ -53,12 +78,33 @@
                         <button type="submit">Withdraw Donation</button>
                     </form>
                     <form action="/view_details/{{ campaign.owner_address }}" method="POST">
-                        <button type="submit">Owner Details</button>
+                        <button id="openDialog" type="button">Owner Details</button>
                     </form>
                 </div>
             </div>
         </div>
     </div>
+
+    <dialog id="ownerDetailsDialog">
+        <form method="dialog">
+            <h2>Owner Details</h2>
+            <p>Username:<strong> {{ user.user_name }}</strong></p>
+            <p>Owner Email:<strong> {{ user.email }}</strong></p>
+            <p>Owner Mobile:<strong> {{ user.mobile }}</strong></p>
+            <br>    
+            <button id="closeDialog" type="reset">Close</button>
+        </form>
+    </dialog>
+
+    <script>
+        document.getElementById('openDialog').addEventListener('click', function () {
+            document.getElementById('ownerDetailsDialog').showModal();
+        });
+
+        document.getElementById('closeDialog').addEventListener('click', function () {
+            document.getElementById('ownerDetailsDialog').close();
+        });
+    </script>
 </body>
 
 </html>

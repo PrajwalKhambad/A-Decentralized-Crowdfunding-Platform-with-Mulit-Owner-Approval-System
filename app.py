@@ -150,8 +150,8 @@ def fetch_individual_campaign_from_firestore(campaign_name):
             'progress': calculate_progress(campaign_data['collectedAmount'], campaign_data['target_amount']),
             'min_contribution': campaign_data['min_contribution'],
             'target_amount': campaign_data['target_amount'],
-            'owner_address': campaign_data['owner_address'],
-            'second_owner_address': campaign_data['second_owner_address'],
+            'owner_address': campaign_data['owner_address'].lower(),
+            'second_owner_address': campaign_data['second_owner_address'].lower(),
             'contract_address': campaign_data['contract_address'],
             'collectedAmount': campaign_data['collectedAmount']
         }
@@ -163,7 +163,16 @@ def fetch_individual_campaign_from_firestore(campaign_name):
 def campaign_details(campaign_name):
     campaign = fetch_individual_campaign_from_firestore(campaign_name=campaign_name)
     print(campaign)
-    return render_template('campaign_detail.html', campaign=campaign)
+
+    email = session.get('user_email')
+    user = fetch_user_details_from_firestore(email=email)
+    
+    contract_address = campaign['contract_address']
+    contract_instance = w3.eth.contract(address=contract_address, abi=abi)
+    approval_status = contract_instance.functions.secondOwnerApproval().call()
+    print("Second Owner Approval Status: ", approval_status)
+
+    return render_template('campaign_detail.html', campaign=campaign, user=user, status=approval_status)
 
 @app.route('/create_campaign')
 def create_campaign():
@@ -275,6 +284,67 @@ def withdraw_donation(campaign_name):
         'gas': 6721975,
         'gasPrice': w3.eth.gas_price,
         'nonce': w3.eth.get_transaction_count(donor_address)
+    })
+
+    signed_txn = w3.eth.account.sign_transaction(transaction, wallet_private_key)
+    tx_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+    print(tx_receipt)
+    # TODO: along with printing receipt, make provision such that user can download a pdf of that receipt.
+
+    amount_collected = contract_instance.functions.amountCollected().call()    
+    print("Amt Coll: ", amount_collected)
+    doc_ref = cl.collection('campaigns').document(campaign_details_['contract_address'])
+    doc_ref.update({
+        'collectedAmount': str(w3.from_wei(amount_collected, 'ether'))
+    })
+
+    return redirect(url_for('home'))
+
+@app.route('/approve_withdrawal/<campaign_name>', methods=['POST'])
+def approve_withdrawal(campaign_name):
+    email = session.get('user_email')
+    user_details = fetch_user_details_from_firestore(email=email)
+    campaign_details_ = fetch_individual_campaign_from_firestore(campaign_name=campaign_name)
+
+    second_owner_address = user_details['wallet_address']
+    contract_address = campaign_details_['contract_address']
+
+    second_owner_address = w3.to_checksum_address(second_owner_address)
+    contract_instance = w3.eth.contract(address=contract_address, abi=abi)
+
+    transaction = contract_instance.functions.approveWithdrawal().build_transaction({
+        'from': second_owner_address,
+        'gas': 6721975,
+        'gasPrice': w3.eth.gas_price,
+        'nonce': w3.eth.get_transaction_count(second_owner_address)
+    })
+
+    signed_txn = w3.eth.account.sign_transaction(transaction, wallet_private_key)
+    tx_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+    print(tx_receipt)
+    # TODO: along with printing receipt, make provision such that user can download a pdf of that receipt.
+
+    return redirect(url_for('home'))
+
+@app.route('/withdraw_funds/<campaign_name>', methods=['POST'])
+def withdraw_funds(campaign_name):
+    email = session.get('user_email')
+    user_details = fetch_user_details_from_firestore(email=email)
+    campaign_details_ = fetch_individual_campaign_from_firestore(campaign_name=campaign_name)
+
+    owner_address = user_details['wallet_address']
+    contract_address = campaign_details_['contract_address']
+
+    owner_address = w3.to_checksum_address(owner_address)
+    contract_instance = w3.eth.contract(address=contract_address, abi=abi)
+
+    transaction = contract_instance.functions.withdrawFunds().build_transaction({
+        'from': owner_address,
+        'gas': 6721975,
+        'gasPrice': w3.eth.gas_price,
+        'nonce': w3.eth.get_transaction_count(owner_address)
     })
 
     signed_txn = w3.eth.account.sign_transaction(transaction, wallet_private_key)
