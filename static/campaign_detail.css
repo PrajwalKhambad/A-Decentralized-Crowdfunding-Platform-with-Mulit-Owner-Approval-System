@@ -2,7 +2,7 @@ body {
     font-family: Arial, sans-serif;
     margin: 0px;
     padding: 0;
-    background-color: #f8f8f8;
+    background-color: #fff;
 }
 
 .container {
@@ -10,7 +10,6 @@ body {
     margin: 25px auto;
     padding: 20px;
     background-color: #fff;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     display: flex;
     justify-content: space-between;
 }
@@ -67,7 +66,7 @@ body {
     margin-right: 30px;
 }
 
-.contribute-section button {
+button {
     padding: 12px 24px;
     font-size: 1em;
     background-color: #ff6f61;
@@ -78,7 +77,7 @@ body {
     transition: background-color 0.3s ease;
 }
 
-.contribute-section button:hover {
+button:hover {
     background-color: #e05246;
 }
 
@@ -96,4 +95,33 @@ body {
     margin: 10px 0;
     /* font-size:em; */
     line-height: 1.5;
+}
+
+.styled-link {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #036dde;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+.styled-link:hover {
+    background-color: #0056b3;
+}
+.styled-link i {
+    margin-left: 6px;
+}
+
+dialog {
+    width: 400px;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+dialog::backdrop {
+    background-color: rgba(0, 0, 0, 0.5);
 }
