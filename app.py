@@ -5,7 +5,7 @@ from connect_contract import w3, contract, abi, contract_bytecode
 
 app = Flask(__name__)
 app.secret_key = "cf_edi_s6_g3_5_ai_b"
-wallet_private_key = '0e1a1681d9c26480cca0f34787cb3462aed1cc89176f7970cf792c1a6fb2d1e4'
+wallet_private_key = '597e05c96f13cdf254836bd7407a98d7b841d5d40d01a60d34e6b1a1989762af'
 
 # Initialize Firebase Admin SDK
 cred = credentials.Certificate("crowdfunding-platform-ceab9-firebase-adminsdk-klmj2-fae3aaaa91.json")
