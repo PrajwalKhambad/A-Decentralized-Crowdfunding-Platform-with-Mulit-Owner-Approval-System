@@ -5,7 +5,7 @@ from connect_contract import w3, contract, abi, contract_bytecode
 
 app = Flask(__name__)
 app.secret_key = "cf_edi_s6_g3_5_ai_b"
-wallet_private_key = ''
+wallet_private_key = '0e1a1681d9c26480cca0f34787cb3462aed1cc89176f7970cf792c1a6fb2d1e4'
 
 # Initialize Firebase Admin SDK
 cred = credentials.Certificate("crowdfunding-platform-ceab9-firebase-adminsdk-klmj2-fae3aaaa91.json")
@@ -168,11 +168,27 @@ def campaign_details(campaign_name):
     user = fetch_user_details_from_firestore(email=email)
     
     contract_address = campaign['contract_address']
-    contract_instance = w3.eth.contract(address=contract_address, abi=abi)
-    approval_status = contract_instance.functions.secondOwnerApproval().call()
-    print("Second Owner Approval Status: ", approval_status)
+    approval_status = True
+    if contract_address:
+        contract_instance = w3.eth.contract(address=contract_address, abi=abi)
+        approval_status = contract_instance.functions.secondOwnerApproval().call()
+        print("Second Owner Approval Status: ", approval_status)
 
-    return render_template('campaign_detail.html', campaign=campaign, user=user, status=approval_status)
+    owner_address = campaign['owner_address']
+    user_ref = cl.collection('users')
+    query = user_ref.where('wallet_address', '==', owner_address).limit(1)
+    docs = query.stream()
+    owner = {}
+    for doc in docs:
+        data = doc.to_dict()
+        owner = {
+            'user_name': data['user_name'],
+            'email': data['email'],
+            'mobile': data['mobile']
+        }
+
+
+    return render_template('campaign_detail.html', campaign=campaign, user=user, status=approval_status, owner=owner)
 
 @app.route('/create_campaign')
 def create_campaign():
