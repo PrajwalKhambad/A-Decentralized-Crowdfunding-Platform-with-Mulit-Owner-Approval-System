@@ -1,4 +1,7 @@
-from flask import Flask, render_template, request, redirect, session, url_for
+from flask import Flask, render_template, request, redirect, session, url_for, flash, send_file
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+import os
 import firebase_admin
 from firebase_admin import credentials, auth, firestore, storage
 from connect_contract import w3, contract, abi, contract_bytecode
@@ -248,6 +251,19 @@ def add_campaign():
         
         return redirect(url_for('home'))
     
+# Function to generate PDF receipt
+def generate_pdf_receipt(donor_address, owner_address, donated_amount, tx_hash, success):
+    receipt_filename = f"receipt_{tx_hash}.pdf"
+    c = canvas.Canvas(receipt_filename, pagesize=letter)
+    c.drawString(100, 750, "Donation Receipt")
+    c.drawString(100, 735, f"Donor Address: {donor_address}")
+    c.drawString(100, 720, f"Owner Address: {owner_address}")
+    c.drawString(100, 705, f"Donated Amount: {donated_amount} ETH")
+    c.drawString(100, 690, f"Transaction Status: {'Successful' if success else 'Failed'}")
+    c.drawString(100, 675, f"Transaction Hash: {tx_hash}")
+    c.save()
+    return receipt_filename
+    
 @app.route('/donate/<campaign_name>', methods=['POST'])
 def donate(campaign_name):
     email = session.get('user_email')
@@ -260,28 +276,38 @@ def donate(campaign_name):
 
     contract_ = w3.eth.contract(address=campaign_details_['contract_address'], abi=abi, bytecode=contract_bytecode)
 
-    transaction = contract_.functions.donate().build_transaction({
-        'from': donor_address,
-        'value': w3.to_wei(donation_amount, 'ether'),
-        'gas': 6721975,
-        'gasPrice': w3.eth.gas_price,
-        'nonce': w3.eth.get_transaction_count(donor_address)
-    })
+    try:
+        transaction = contract_.functions.donate().build_transaction({
+            'from': donor_address,
+            'value': w3.to_wei(donation_amount, 'ether'),
+            'gas': 6721975,
+            'gasPrice': w3.eth.gas_price,
+            'nonce': w3.eth.get_transaction_count(donor_address)
+        })
 
-    signed_txn = w3.eth.account.sign_transaction(transaction, wallet_private_key)
-    tx_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction)
-    tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash,timeout=600)
-    print(tx_receipt)
-    # TODO: along with printing receipt, make provision such that user can download a pdf of that receipt.
-    
-    amount_collected = contract_.functions.amountCollected().call()    
-    print("Amt Coll: ", amount_collected)
-    doc_ref = cl.collection('campaigns').document(campaign_details_['contract_address'])
-    doc_ref.update({
-        'collectedAmount': str(w3.from_wei(amount_collected, 'ether'))
-    })
+        signed_txn = w3.eth.account.sign_transaction(transaction, wallet_private_key)
+        tx_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction)
+        tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=600)
 
-    return redirect(url_for('home'))
+        if tx_receipt.status == 1:
+            flash('Transaction Successful', 'success')
+            receipt_filename = generate_pdf_receipt(donor_address, campaign_details_['owner_address'], donation_amount, tx_hash.hex(), True)
+        else:
+            flash('Transaction Failed', 'danger')
+            receipt_filename = generate_pdf_receipt(donor_address, campaign_details_['owner_address'], donation_amount, tx_hash.hex(), False)
+
+        amount_collected = contract_.functions.amountCollected().call()
+        doc_ref = cl.collection('campaigns').document(campaign_details_['contract_address'])
+        doc_ref.update({
+            'collectedAmount': str(w3.from_wei(amount_collected, 'ether'))
+        })
+
+        return send_file(receipt_filename, as_attachment=True)
+
+    except Exception as e:
+        flash(f'Transaction Failed: {str(e)}', 'danger')
+        return redirect(url_for('campaign_details', campaign_name=campaign_name))
+
 
 @app.route('/withdraw_donation/<campaign_name>', methods=['POST'])
 def withdraw_donation(campaign_name):
