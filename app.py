@@ -3,11 +3,12 @@ from flask import Flask, render_template, request, redirect, session, url_for, f
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 import firebase_admin
-from firebase_admin import credentials, auth, firestore, storage
-from connect_contract import w3, contract, abi, contract_bytecode
+from firebase_admin import auth, credentials, firestore, storage
+from connect_contract import abi, contract, contract_bytecode, w3
 
 app = Flask(__name__)
 app.secret_key = "cf_edi_s6_g3_5_ai_b"
+
 wallet_private_key = ''
 
 # Initialize Firebase Admin SDK
@@ -18,7 +19,7 @@ cl = firestore.client()
 
 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-@app.route('/')
+@app.route('/',methods=['GET', 'POST'])
 def hello():
     campaigns = fetch_campaigns_from_firestore()
     return render_template('home.html', campaigns=campaigns)
@@ -26,47 +27,43 @@ def hello():
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
-        user_name = request.form.get('user_name')
-        email = request.form.get('email')
-        institution = request.form.get('institution')
-        password = request.form.get('password')
-        mobile = request.form.get('mobile')
-        # user_type = request.form.get('user_type')
-
-        try:
-            user = auth.create_user(email=email, password=password)
-            # Store user information in Firestore
-            user_doc_ref = cl.collection('users').document(user.uid)
-            user_doc_ref.set({
-                'user_name': user_name,
-                'email': email,
-                'institution': institution,
-                'mobile': mobile,
-                'wallet_address': ''
-                # 'user_type': user_type
-            })
-            session['user_email'] = email
-            return redirect(url_for('login'))
-        except ValueError as e:
-            error_message = e.message
-            return render_template('signup.html', error=error_message)
-    return render_template('signup.html')
-
-@app.route('/login', methods=['GET','POST'])
-def login():
-    if request.method == 'POST':
+        action = request.form.get('action')
         email = request.form.get('email')
         password = request.form.get('password')
-        try:
-            user = auth.get_user_by_email(email)            
-            session['user_email'] = email
-            print(email)
-            return redirect(url_for('home'))
-        except Exception as e:
-            error_message = str(e)
-            return render_template('login.html', error=error_message)
-    else:
-        return render_template('login.html')
+
+        if action == 'signup':
+            user_name = request.form.get('user_name')
+            institution = request.form.get('institution')
+            mobile = request.form.get('mobile')
+
+            try:
+                user = auth.create_user(email=email, password=password)
+                # Store user information in Firestore
+                user_doc_ref = cl.collection('users').document(user.uid)
+                user_doc_ref.set({
+                    'user_name': user_name,
+                    'email': email,
+                    'institution': institution,
+                    'mobile': mobile,
+                    'wallet_address': ''
+                })
+                session['user_email'] = email
+                return redirect(url_for('home'))
+            except Exception as e:
+                error_message = str(e)
+                return render_template('login.html', error=error_message)
+
+        elif action == 'signin':
+            try:
+                user = auth.get_user_by_email(email)
+                session['user_email'] = email
+                return redirect(url_for('home'))
+            except Exception as e:
+                error_message = str(e)
+                return render_template('login.html', error=error_message)
+
+    return render_template('login.html')
+        
 
 @app.route('/is_logged_in', methods=['GET'])
 def is_logged_in():
@@ -79,7 +76,7 @@ def is_logged_in():
 @app.route('/logout')
 def logout():
     session.pop('user_email', None)
-    return redirect(url_for('login'))
+    return redirect(url_for('signup'))
 
     
 def calculate_progress(raised, target):
@@ -272,19 +269,6 @@ def add_campaign():
         
         return redirect(url_for('home'))
     
-# Function to generate PDF receipt
-def generate_pdf_receipt(donor_address, owner_address, donated_amount, tx_hash, success):
-    receipt_filename = f"receipt_{tx_hash}.pdf"
-    c = canvas.Canvas(receipt_filename, pagesize=letter)
-    c.drawString(100, 750, "Donation Receipt")
-    c.drawString(100, 735, f"Donor Address: {donor_address}")
-    c.drawString(100, 720, f"Owner Address: {owner_address}")
-    c.drawString(100, 705, f"Donated Amount: {donated_amount} ETH")
-    c.drawString(100, 690, f"Transaction Status: {'Successful' if success else 'Failed'}")
-    c.drawString(100, 675, f"Transaction Hash: {tx_hash}")
-    c.save()
-    return receipt_filename
-    
 @app.route('/donate/<campaign_name>', methods=['POST'])
 def donate(campaign_name):
     email = session.get('user_email')
@@ -335,11 +319,6 @@ def donate(campaign_name):
         })
 
         return send_file(receipt_filename, as_attachment=True)
-
-    except Exception as e:
-        flash(f'Transaction Failed: {str(e)}', 'danger')
-        return redirect(url_for('campaign_details', campaign_name=campaign_name))
-
 
 @app.route('/withdraw_donation/<campaign_name>', methods=['POST'])
 def withdraw_donation(campaign_name):
