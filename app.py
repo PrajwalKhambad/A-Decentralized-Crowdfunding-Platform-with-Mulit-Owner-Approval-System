@@ -21,8 +21,9 @@ timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 @app.route('/',methods=['GET', 'POST'])
 def hello():
-    campaigns = fetch_campaigns_from_firestore()
-    return render_template('home.html', campaigns=campaigns)
+    # campaigns = fetch_campaigns_from_firestore()
+    signup()
+    return render_template('login.html')
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -267,7 +268,20 @@ def add_campaign():
             'timestamp': timestamp,
         })
         
-        return redirect(url_for('home'))
+        return redirect(url_for('campaign_details'))
+    
+# Function to generate PDF receipt
+def generate_pdf_receipt(donor_address, owner_address, donated_amount, tx_hash, success):
+    receipt_filename = f"receipt_{tx_hash}.pdf"
+    c = canvas.Canvas(receipt_filename, pagesize=letter)
+    c.drawString(100, 750, "Donation Receipt")
+    c.drawString(100, 735, f"Donor Address: {donor_address}")
+    c.drawString(100, 720, f"Owner Address: {owner_address}")
+    c.drawString(100, 705, f"Donated Amount: {donated_amount} ETH")
+    c.drawString(100, 690, f"Transaction Status: {'Successful' if success else 'Failed'}")
+    c.drawString(100, 675, f"Transaction Hash: {tx_hash}")
+    c.save()
+    return receipt_filename
     
 @app.route('/donate/<campaign_name>', methods=['POST'])
 def donate(campaign_name):
@@ -319,6 +333,9 @@ def donate(campaign_name):
         })
 
         return send_file(receipt_filename, as_attachment=True)
+    except Exception as e:
+        flash(f'Transaction Failed: {str(e)}', 'danger')
+        return redirect(url_for('campaign_details', campaign_name=campaign_name))
 
 @app.route('/withdraw_donation/<campaign_name>', methods=['POST'])
 def withdraw_donation(campaign_name):
@@ -363,7 +380,7 @@ def withdraw_donation(campaign_name):
         'timestamp': timestamp,
     })
 
-    return redirect(url_for('home'))
+    return redirect(url_for('view_user_transactions'))
 
 @app.route('/approve_withdrawal/<campaign_name>', methods=['POST'])
 def approve_withdrawal(campaign_name):
@@ -401,7 +418,7 @@ def approve_withdrawal(campaign_name):
         'timestamp': timestamp,
     })
 
-    return redirect(url_for('home'))
+    return redirect(url_for('view_user_transactions'))
 
 @app.route('/withdraw_funds/<campaign_name>', methods=['POST'])
 def withdraw_funds(campaign_name):
@@ -446,7 +463,7 @@ def withdraw_funds(campaign_name):
         'timestamp': timestamp,
     })
 
-    return redirect(url_for('home'))
+    return redirect(url_for('view_user_transactions'))
 
     
 if __name__ == '__main__':
