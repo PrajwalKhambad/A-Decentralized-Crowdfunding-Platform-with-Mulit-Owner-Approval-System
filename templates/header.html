@@ -16,7 +16,7 @@
                 <ul>
                     <li><a href="/create_campaign">Create Campaign</a></li>
                     <li><a href="#" id="connectWalletBtn">Connect Wallet</a></li>
-                    <li><a href="#">View Transactions</a></li>
+                    <li><a href="/view_transactions">View Transactions</a></li>
                     <li><a href="/homepage">Home</a></li>
                     <li><a href="/user_profile">Profile</a></li>
                 </ul>
@@ -90,6 +90,13 @@
             if (!accounts) { return; }
 
             window.userWalletAddress = accounts[0];
+            fetch('/update_wallet', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ wallet_address: accounts[0] })
+                    });
             document.getElementById('walletAddress').innerText = "Connected Wallet Address: " + window.userWalletAddress;
             document.getElementById('connectMetaMaskBtn').style.display = 'none';
             document.getElementById('getBalance').style.display = 'block';
