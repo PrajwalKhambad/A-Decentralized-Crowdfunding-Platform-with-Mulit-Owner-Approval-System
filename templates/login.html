@@ -1,21 +1,57 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <link rel="stylesheet" href="./static/Login.css">
+    <title>Document</title>
 </head>
 <body>
-    <h2>Login</h2>
-    {% if error %}
-        <p>{{ error }}</p>
-    {% endif %}
-    <form method="POST" action="/login">
-        <label for="email">Email:</label><br>
-        <input type="email" id="email" name="email"><br>
-        <label for="password">Password:</label><br>
-        <input type="password" id="password" name="password"><br>
-        <input type="submit" value="Login">
-    </form>
+
+<div class="container" id="container">
+    <div class="form-container sign-up-container">
+        <form action="/signup" id="signup-form" method="POST" >
+            <h1>Create Account</h1>
+            <input type="text" id="user_name" name="user_name" placeholder="Name" required>
+            <input type="email" id="email" name="email" placeholder="Email" required>
+            <input type="password" id="password" name="password" placeholder="Password" required>
+            <input type="text" id="institution" name="institution" placeholder="Institution Name" required>
+            <input type="tel" id="mobile" name="mobile" pattern="[0-9]{10}" placeholder="Mobile Number" required>
+            <input type="hidden" name="action" value="signup" >
+            <button type="submit">Sign Up</button>
+        </form>
+    </div>
+    <div class="form-container sign-in-container">
+        <form action="/signup" id="signin-form" method="POST" >
+            <h1>Sign in</h1>
+            {% if error %}
+                <p>{{ error }}</p>
+            {% endif %}
+            <input type="email" name="email" placeholder="Email" />
+            <input type="password" name="password" placeholder="Password" />
+            <input type="hidden" name="action" value="signin" >
+            <button type="submit">Sign In</button>
+        </form>
+    </div>
+    <div class="overlay-container">
+        <div class="overlay">
+            <div class="overlay-panel overlay-left">
+                <h1>Welcome Back!</h1>
+                <p>To keep connected with us please login with your personal info</p>
+                <button class="ghost" id="signIn">Sign In</button>
+            </div>
+            <div class="overlay-panel overlay-right">
+                <h1>Welcome aboard!</h1>
+                <p>Enter your personal details and start journey with us</p>
+                <button class="ghost" id="signUp">Sign Up</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="./static/script.js"></script>
+
 </body>
 </html>
+
