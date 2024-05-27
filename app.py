@@ -1,20 +1,22 @@
+from datetime import datetime
 from flask import Flask, render_template, request, redirect, session, url_for, flash, send_file
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
-import os
 import firebase_admin
 from firebase_admin import credentials, auth, firestore, storage
 from connect_contract import w3, contract, abi, contract_bytecode
 
 app = Flask(__name__)
 app.secret_key = "cf_edi_s6_g3_5_ai_b"
-wallet_private_key = '597e05c96f13cdf254836bd7407a98d7b841d5d40d01a60d34e6b1a1989762af'
+wallet_private_key = ''
 
 # Initialize Firebase Admin SDK
 cred = credentials.Certificate("crowdfunding-platform-ceab9-firebase-adminsdk-klmj2-fae3aaaa91.json")
 firebase_admin.initialize_app(cred, {'storageBucket': 'crowdfunding-platform-ceab9.appspot.com'})
 
 cl = firestore.client()
+
+timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 @app.route('/')
 def hello():
@@ -190,8 +192,15 @@ def campaign_details(campaign_name):
             'mobile': data['mobile']
         }
 
-
     return render_template('campaign_detail.html', campaign=campaign, user=user, status=approval_status, owner=owner)
+
+@app.route('/view_transactions')
+def view_user_transactions():
+    email = session.get('user_email')
+    user_ref = cl.collection("user_transactions").document(email).collection("transactions")    
+    transactions = [doc.to_dict() for doc in user_ref.stream()]
+    
+    return render_template('user_transactions.html', transactions=transactions)
 
 @app.route('/create_campaign')
 def create_campaign():
@@ -248,6 +257,18 @@ def add_campaign():
             'contract_address': tx_receipt.contractAddress,
             'collectedAmount': 0
         })
+
+        email = session.get('user_email')
+        user_ref = cl.collection("user_transactions").document(email).collection("transactions").document()
+        user_ref.set({
+            'type': 'Campaign Creation',
+            'amt': 'N/A',
+            'from': tx_receipt['from'],
+            'to': tx_receipt.to,
+            'status': tx_receipt.status,
+            'transactionHash': tx_receipt.transactionHash.hex(),
+            'timestamp': timestamp,
+        })
         
         return redirect(url_for('home'))
     
@@ -302,6 +323,17 @@ def donate(campaign_name):
             'collectedAmount': str(w3.from_wei(amount_collected, 'ether'))
         })
 
+        user_ref = cl.collection("user_transactions").document(email).collection("transactions").document()
+        user_ref.set({
+            'type': 'Donate',
+            'amt': donation_amount,
+            'from': tx_receipt['from'],
+            'to': tx_receipt.to,
+            'status': tx_receipt.status,
+            'transactionHash': tx_receipt.transactionHash.hex(),
+            'timestamp': timestamp,
+        })
+
         return send_file(receipt_filename, as_attachment=True)
 
     except Exception as e:
@@ -341,6 +373,17 @@ def withdraw_donation(campaign_name):
         'collectedAmount': str(w3.from_wei(amount_collected, 'ether'))
     })
 
+    user_ref = cl.collection("user_transactions").document(email).collection("transactions").document()
+    user_ref.set({
+        'type': 'Withdraw Donation',
+        'amt': 'N/A',
+        'from': tx_receipt['from'],
+        'to': tx_receipt.to,
+        'status': tx_receipt.status,
+        'transactionHash': tx_receipt.transactionHash.hex(),
+        'timestamp': timestamp,
+    })
+
     return redirect(url_for('home'))
 
 @app.route('/approve_withdrawal/<campaign_name>', methods=['POST'])
@@ -367,6 +410,17 @@ def approve_withdrawal(campaign_name):
     tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
     print(tx_receipt)
     # TODO: along with printing receipt, make provision such that user can download a pdf of that receipt.
+
+    user_ref = cl.collection("user_transactions").document(email).collection("transactions").document()
+    user_ref.set({
+        'type': 'Approval',
+        'amt': 'N/A',
+        'from': tx_receipt['from'],
+        'to': tx_receipt.to,
+        'status': tx_receipt.status,
+        'transactionHash': tx_receipt.transactionHash.hex(),
+        'timestamp': timestamp,
+    })
 
     return redirect(url_for('home'))
 
@@ -400,6 +454,17 @@ def withdraw_funds(campaign_name):
     doc_ref = cl.collection('campaigns').document(campaign_details_['contract_address'])
     doc_ref.update({
         'collectedAmount': str(w3.from_wei(amount_collected, 'ether'))
+    })
+
+    user_ref = cl.collection("user_transactions").document(email).collection("transactions").document()
+    user_ref.set({
+        'type': 'Fund Withdrawal',
+        'amt': 'N/A',
+        'from': tx_receipt['from'],
+        'to': tx_receipt.to,
+        'status': tx_receipt.status,
+        'transactionHash': tx_receipt.transactionHash.hex(),
+        'timestamp': timestamp,
     })
 
     return redirect(url_for('home'))

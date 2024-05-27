@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Transactions</title>
+    <style>
+        table {
+            width: 80%;
+            margin: 10px auto;
+            border-collapse: collapse;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            background-color: #fff;
+            table-layout: fixed;
+            border-radius: 15px;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: center;
+            border-bottom: 3px solid #ddd;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            font-size: 15px;
+            color: #555;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: white;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        td {
+            color: #333;
+        }
+
+        @media (max-width: 768px) {
+            table {
+                width: 100%;
+            }
+
+            th, td {
+                padding: 8px;
+            }
+        }
+        .status-0 {
+            background-color: rgba(255, 0, 0, 0.1); 
+        }
+
+        .status-1.donate, .status-1.withdraw-donation {
+            background-color: rgba(0, 255, 0, 0.1); 
+        }
+
+        .status-1.fund-withdrawal, .status-1.approval {
+            background-color: rgba(0, 0, 255, 0.1); 
+        }
+
+        .status-1.campaign-creation {
+            background-color: rgba(255, 165, 0, 0.1); 
+        }
+
+        p{
+            text-align: center;
+            margin: 20px;
+            font-weight: bold;
+            font-size: 25px;
+        }
+        hr{
+            margin-left: 120px;
+            margin-right: 120px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    {% include 'header.html' %}
+    <p>User Transactions</p>
+    <hr>
+    <table>
+        <thead>
+            <tr>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Status</th>
+                <th>Transaction Hash</th>
+                <th>Date & Time</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for transaction in transactions %}
+            <tr class="status-{{ transaction.status }} 
+                {% if transaction.status == 1 %} 
+                    {% if transaction.type == 'Donate' or transaction.type == 'Withdraw Donation' %} donate {% elif transaction.type == 'Fund Withdrawal' or transaction.type == 'Approval' %} fund-withdrawal {% endif %} 
+                {% endif %}">
+                <td>{{ transaction.type }}</td>
+                <td>{{ transaction.amt }}</td>
+                <td>{{ transaction.from }}</td>
+                <td>{{ transaction.to }}</td>
+                <td>{{ transaction.status }}</td>
+                <td>{{ transaction.transactionHash }}</td>
+                <td>{{ transaction.timestamp }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
