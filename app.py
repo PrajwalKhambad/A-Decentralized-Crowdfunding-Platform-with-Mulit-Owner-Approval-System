@@ -7,7 +7,7 @@ from firebase_admin import auth, credentials, firestore, storage
 from connect_contract import abi, contract, contract_bytecode, w3
 
 app = Flask(__name__)
-app.secret_key = "cf_edi_s6_g3_5_ai_b"
+app.secret_key = ""
 
 wallet_private_key = ''
 
